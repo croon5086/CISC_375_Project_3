@@ -13,7 +13,7 @@ var app = express();
 var port = 8000;
 
 // open the database
-var db = new sqlite3.Database(db_filename, sqlite3.OPEN_READONLY, (err) => {
+var db = new sqlite3.Database(db_filename, sqlite3.OPEN_READWRITE, (err) => {
     if (err) {
         console.log('Error opening ' + db_filename);
     }
@@ -31,9 +31,6 @@ function newIncident(req, res) {
 		console.log("IN THIS FUNCTION!");
 		
 		var dateTime = req.body.date + "T" + req.body.time;
-		
-		
-		
 		
 		//console.log(req.body.caseNumber + ", " + req.body.dateTime);
 		
@@ -98,10 +95,16 @@ function getIncidents() {
 	});
 }
 
-function getNeighborhoods() {
+function getNeighborhoods(selected_hoods, selected_format) {
 	return new Promise((resolve, reject) => {;
 		var hoods = {};
-		db.all("SELECT neighborhood_number, neighborhood_name FROM Neighborhoods", (err, rows) => {
+		if (selected_hoods != "") {
+			var sql = "SELECT neighborhood_number, neighborhood_name FROM Neighborhoods WHERE neighborhood_number IN (" + selected_hoods + ")";
+		}
+		else {
+			var sql = "SELECT neighborhood_number, neighborhood_name FROM Neighborhoods"; 
+		}
+		db.all(sql, (err, rows) => {
 			if (err) {
 				throw err;
 			}
@@ -113,10 +116,20 @@ function getNeighborhoods() {
 	});
 }
 
-function getCodes() {
+function getCodes(selected_codes, selected_format) {
 	return new Promise((resolve, reject) => {
+		
 		var codes = {};
-		db.all("SELECT code, incident_type FROM Codes", (err, rows) => {
+		
+		if (selected_codes != "") {
+			
+			var sql = "SELECT code, incident_type FROM Codes WHERE code IN (" + selected_codes + ")";
+		}
+		else {
+			console.log("is nothing!");
+			var sql = "SELECT code, incident_type FROM Codes";
+		}
+		db.all(sql, (err, rows) => {
 			if (err) {
 				throw err;
 			}
@@ -129,8 +142,37 @@ function getCodes() {
 }
 
 app.get('/codes', (req, res) => {
-	
-	Promise.all([getCodes()]).then((data) => {
+	var queryString = req.url;
+	if(queryString.search("hello=") == -1) {
+		console.log('hello there');
+	}
+	var selected_codes = "";
+	var selected_format = "";
+	if (queryString != "/codes") {
+		console.log("1");
+		//only issue is if the user puts format before code
+		if (queryString.search("code=") != -1 && queryString.search("format=") != -1) {
+			console.log("2");
+			queryString = queryString.split("&");
+			selected_codes = queryString[0].slice(queryString[0].indexOf("=") + 1);
+			selected_codes = selected_codes.split(",");
+			selected_format = queryString[1].slice(queryString[1].indexOf("=") + 1);
+		}
+		else if (queryString.search("code=") != -1 && queryString.search("format=") == -1) {
+			console.log("3");
+			queryString = queryString.slice(queryString.indexOf("=") + 1);
+			queryString = queryString.split(",");
+			selected_codes = queryString;
+		}
+		else if (queryString.search("code=") == -1 && queryString.search("format=") == -1) {
+			console.log("4");
+			queryString = queryString.slice(queryString.indexOf("=") + 1);
+			selected_format = queryString;
+		}
+	}
+	console.log(selected_codes);
+	console.log(selected_format);
+	Promise.all([getCodes(selected_codes, selected_format)]).then((data) => {
 		//console.log(data);
 		res.type('json').send(data);
     }).catch((err) => {
@@ -140,8 +182,28 @@ app.get('/codes', (req, res) => {
 });
 
 app.get('/neighborhoods', (req, res) => {
-	
-	Promise.all([getNeighborhoods()]).then((data) => {
+	var queryString = req.url;	
+	var selected_hoods = "";
+	var selected_format = "";
+	if (queryString != "/neighborhoods") {
+		//only issue is if the user puts format before code
+		if (queryString.search("id=") != -1 && queryString.search("format=") != -1) {
+			queryString = queryString.split("&");
+			selected_hoods = queryString[0].slice(queryString[0].indexOf("=") + 1);
+			selected_hoods = selected_codes.split(",");
+			selected_format = queryString[1].slice(queryString[1].indexOf("=") + 1);
+		}
+		else if (queryString.search("id=") != -1 && queryString.search("format=") == -1) {
+			queryString = queryString.slice(queryString.indexOf("=") + 1);
+			queryString = queryString.split(",");
+			selected_hoods = queryString;
+		}
+		else if (queryString.search("id=") == -1 && queryString.search("format=") == -1) {
+			queryString = queryString.slice(queryString.indexOf("=") + 1);
+			selected_format = queryString;
+		}
+	}
+	Promise.all([getNeighborhoods(selected_hoods, selected_format)]).then((data) => {
 		res.type('json').send(data);
     }).catch((err) => {
         console.log("error");
