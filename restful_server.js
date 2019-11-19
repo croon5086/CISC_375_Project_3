@@ -3,8 +3,8 @@ var fs = require('fs')
 var path = require('path')
 var bodyParser = require('body-parser');
 // NPM modules
-var express = require('express')
-var sqlite3 = require('sqlite3')
+var express = require('express');
+var sqlite3 = require('sqlite3');
 
 var public_dir = path.join(__dirname, 'public');
 var db_filename = path.join(__dirname, 'db', 'stpaul_crime.sqlite3');
@@ -28,40 +28,28 @@ function newIncident(req, res) {
 	return new Promise((resolve, reject) => {
 		var message = "";
 		var foundDuplicate = false;
-		console.log("IN THIS FUNCTION!");
-		
 		var dateTime = req.body.date + "T" + req.body.time;
-		
-		//console.log(req.body.caseNumber + ", " + req.body.dateTime);
-		
+
 		db.all("SELECT case_number FROM Incidents", (err, rows) => {
 			if (err) {
-				console.log("error is here!");
 				throw err;
 			}
 			for (key in rows) {
-				
 				var a = parseInt(rows[key].case_number, 10);
 				var b = parseInt(req.body.case_number, 10);
-				
 				if (a == b) {
-					console.log(a + "is equal to " + b);
-					res.status(500).send('Error, case number already exists in the database');
-					resolve("ERROR!");
+					resolve(res.status(500).send('Error, case number already exists in the database'));
 					foundDuplicate = true;
 				}
 			}
 			if (!foundDuplicate) {
-				console.log("here!");
-				console.log(req.body.case_number + "  " + dateTime + "  " + req.body.code + "   " + req.body.incident + "   " + req.body.police_grid + "  " + req.body.neighborhood_number + "  " + req.body.block);
 				db.all("INSERT INTO Incidents VALUES (?, ?, ?, ?, ?, ?, ?)", [req.body.case_number], [dateTime], [req.body.code], [req.body.incident], [req.body.police_grid], [req.body.neighborhood_number], [req.body.block], (err, new_rows) => {
 					if (err) {
 						console.log('error is hereree');
 						throw err;
 					}
-					res.status(200).send('Success!');
+					resolve(res.status(200).send('Success!'));
 				});
-				resolve("Success!");
 			}
 		});
 		
@@ -69,36 +57,69 @@ function newIncident(req, res) {
 	});
 }
 
-function getIncidents() {
+function getIncidents(r_start_date, r_end_date, r_code, r_grid, r_neighborhood, r_limit) {
 	return new Promise((resolve, reject) => {
 		var incidents = {};
-		db.all("SELECT case_number, date_time, code, incident, police_grid, neighborhood_number, block FROM Incidents", (err, rows) => {
+		var sql = "SELECT case_number, date_time, code, incident, police_grid, neighborhood_number, block FROM Incidents WHERE 1=1";
+		var number_times;
+		
+		if (r_start_date != undefined) {
+			sql = sql + " AND date_time >= '" + r_start_date + "'";
+		}
+		if (r_end_date != undefined) {
+			sql = sql + " AND date_time <= '" + r_end_date + "'";
+		}
+		if (r_code != undefined) {
+			sql = sql + " AND code IN (" + r_code + ")";
+		}
+		if (r_grid != undefined) {
+			sql = sql + " AND police_grid IN (" + r_grid + ")";
+		}
+		if (r_neighborhood != undefined) {
+			sql = sql + " AND neighborhood_number IN (" + r_neighborhood + ")";
+		}
+		if (r_limit != undefined) {
+			number_times = r_limit;
+			
+		}
+		else if (r_limit == undefined) {
+			number_times = 10000;
+		}
+		sql = sql + " ORDER BY date_time DESC";
+		console.log("SQL = " + sql);
+		db.all(sql, (err, rows) => {
 			if (err) {
 				throw err;
 			}
-			for (var key in rows) {
-				
-				var currentValue = {};
-				
-				currentValue["date"] = rows[key].date_time.slice(0, 10);
-				currentValue["time"] = rows[key].date_time.slice(11, 19);
-				currentValue["code"] = rows[key].code;
-				currentValue["incident"] = rows[key].incident;
-				currentValue["police_grid"] = rows[key].police_grid;
-				currentValue["neighborhood_number"] = rows[key].neighborhood_number;
-				currentValue["block"] = rows[key].block;
-				
-				incidents["I" + rows[key].case_number] = currentValue;
+
+			var i = 0;
+			for(var key in rows) {
+				if(i < number_times) {
+					var currentValue = {};
+					
+					currentValue["date"] = rows[key].date_time.slice(0, 10);
+					currentValue["time"] = rows[key].date_time.slice(11, 19);
+					currentValue["code"] = rows[key].code;
+					currentValue["incident"] = rows[key].incident;
+					currentValue["police_grid"] = rows[key].police_grid;
+					currentValue["neighborhood_number"] = rows[key].neighborhood_number;
+					currentValue["block"] = rows[key].block;
+					
+					incidents["I" + rows[key].case_number] = currentValue;
+					i++;
+				}
 			}
+			
 			resolve(incidents);
 		});
+		
 	});
 }
 
-function getNeighborhoods(selected_hoods, selected_format) {
+function getNeighborhoods(selected_hoods) {
 	return new Promise((resolve, reject) => {;
 		var hoods = {};
-		if (selected_hoods != "") {
+		if (selected_hoods != undefined) {
 			var sql = "SELECT neighborhood_number, neighborhood_name FROM Neighborhoods WHERE neighborhood_number IN (" + selected_hoods + ")";
 		}
 		else {
@@ -116,17 +137,14 @@ function getNeighborhoods(selected_hoods, selected_format) {
 	});
 }
 
-function getCodes(selected_codes, selected_format) {
-	return new Promise((resolve, reject) => {
-		
+function getCodes(selected_codes) {
+	return new Promise((resolve, reject) => {	
 		var codes = {};
-		
-		if (selected_codes != "") {
+		if (selected_codes != undefined) {
 			
 			var sql = "SELECT code, incident_type FROM Codes WHERE code IN (" + selected_codes + ")";
 		}
 		else {
-			console.log("is nothing!");
 			var sql = "SELECT code, incident_type FROM Codes";
 		}
 		db.all(sql, (err, rows) => {
@@ -142,39 +160,15 @@ function getCodes(selected_codes, selected_format) {
 }
 
 app.get('/codes', (req, res) => {
-	var queryString = req.url;
-	if(queryString.search("hello=") == -1) {
-		console.log('hello there');
-	}
-	var selected_codes = "";
-	var selected_format = "";
-	if (queryString != "/codes") {
-		console.log("1");
-		//only issue is if the user puts format before code
-		if (queryString.search("code=") != -1 && queryString.search("format=") != -1) {
-			console.log("2");
-			queryString = queryString.split("&");
-			selected_codes = queryString[0].slice(queryString[0].indexOf("=") + 1);
-			selected_codes = selected_codes.split(",");
-			selected_format = queryString[1].slice(queryString[1].indexOf("=") + 1);
+	
+	Promise.all([getCodes(req.query.code)]).then((data) => {
+		if (req.query.format == 'xml') {
+			res.type('application/xml').send(data);
 		}
-		else if (queryString.search("code=") != -1 && queryString.search("format=") == -1) {
-			console.log("3");
-			queryString = queryString.slice(queryString.indexOf("=") + 1);
-			queryString = queryString.split(",");
-			selected_codes = queryString;
+		else {
+			res.type('json').send(data);
 		}
-		else if (queryString.search("code=") == -1 && queryString.search("format=") == -1) {
-			console.log("4");
-			queryString = queryString.slice(queryString.indexOf("=") + 1);
-			selected_format = queryString;
-		}
-	}
-	console.log(selected_codes);
-	console.log(selected_format);
-	Promise.all([getCodes(selected_codes, selected_format)]).then((data) => {
-		//console.log(data);
-		res.type('json').send(data);
+		
     }).catch((err) => {
         console.log("error");
     });
@@ -182,29 +176,13 @@ app.get('/codes', (req, res) => {
 });
 
 app.get('/neighborhoods', (req, res) => {
-	var queryString = req.url;	
-	var selected_hoods = "";
-	var selected_format = "";
-	if (queryString != "/neighborhoods") {
-		//only issue is if the user puts format before code
-		if (queryString.search("id=") != -1 && queryString.search("format=") != -1) {
-			queryString = queryString.split("&");
-			selected_hoods = queryString[0].slice(queryString[0].indexOf("=") + 1);
-			selected_hoods = selected_codes.split(",");
-			selected_format = queryString[1].slice(queryString[1].indexOf("=") + 1);
+	Promise.all([getNeighborhoods(req.query.id)]).then((data) => {
+		if (req.query.format == 'xml') {
+			res.type('xml').send(data);
 		}
-		else if (queryString.search("id=") != -1 && queryString.search("format=") == -1) {
-			queryString = queryString.slice(queryString.indexOf("=") + 1);
-			queryString = queryString.split(",");
-			selected_hoods = queryString;
+		else {
+			res.type('json').send(data);
 		}
-		else if (queryString.search("id=") == -1 && queryString.search("format=") == -1) {
-			queryString = queryString.slice(queryString.indexOf("=") + 1);
-			selected_format = queryString;
-		}
-	}
-	Promise.all([getNeighborhoods(selected_hoods, selected_format)]).then((data) => {
-		res.type('json').send(data);
     }).catch((err) => {
         console.log("error");
     });
@@ -212,9 +190,13 @@ app.get('/neighborhoods', (req, res) => {
 });
 
 app.get('/incidents', (req, res) => {
-	
-	Promise.all([getIncidents()]).then((data) => {
-		res.type('json').send(data);
+	Promise.all([getIncidents(req.query.start_date, req.query.end_date, req.query.code, req.query.grid, req.query.id, req.query.limit)]).then((data) => {
+		if (req.query.format == 'xml') {
+			res.type('xml').send(data);
+		}
+		else {
+			res.type('json').send(data);
+		}
     }).catch((err) => {
         console.log("error");
     });
@@ -222,19 +204,13 @@ app.get('/incidents', (req, res) => {
 });
 
 app.put('/new-incident', (req, res) => {
-	console.log("in the put!");
 	Promise.all([newIncident(req, res)]).then((data) => {
-		console.log("You have tried to add an incident!");
-		console.log("DATA = " + data);
+		
     }).catch((err) => {
 		console.log(err);
-        console.log("error at the bottom!");
     });
 	
 });
-
-
-
 
 
 var server = app.listen(port);
