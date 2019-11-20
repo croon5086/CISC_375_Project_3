@@ -5,6 +5,7 @@ var bodyParser = require('body-parser');
 // NPM modules
 var express = require('express');
 var sqlite3 = require('sqlite3');
+var js2xmlparser = require("js2xmlparser");
 
 var public_dir = path.join(__dirname, 'public');
 var db_filename = path.join(__dirname, 'db', 'stpaul_crime.sqlite3');
@@ -45,7 +46,6 @@ function newIncident(req, res) {
 			if (!foundDuplicate) {
 				db.all("INSERT INTO Incidents VALUES (?, ?, ?, ?, ?, ?, ?)", [req.body.case_number], [dateTime], [req.body.code], [req.body.incident], [req.body.police_grid], [req.body.neighborhood_number], [req.body.block], (err, new_rows) => {
 					if (err) {
-						console.log('error is hereree');
 						throw err;
 					}
 					resolve(res.status(200).send('Success!'));
@@ -86,7 +86,6 @@ function getIncidents(r_start_date, r_end_date, r_code, r_grid, r_neighborhood, 
 			number_times = 10000;
 		}
 		sql = sql + " ORDER BY date_time DESC";
-		console.log("SQL = " + sql);
 		db.all(sql, (err, rows) => {
 			if (err) {
 				throw err;
@@ -163,7 +162,8 @@ app.get('/codes', (req, res) => {
 	
 	Promise.all([getCodes(req.query.code)]).then((data) => {
 		if (req.query.format == 'xml') {
-			res.type('application/xml').send(data);
+			
+			res.type('application/xml').send(js2xmlparser.parse("toconvert",data));
 		}
 		else {
 			res.type('json').send(data);
@@ -175,10 +175,10 @@ app.get('/codes', (req, res) => {
 	
 });
 
-app.get('/neighborhoods', (req, res) => {
+app.get('/neighborhoods', (req, res) =>  {
 	Promise.all([getNeighborhoods(req.query.id)]).then((data) => {
 		if (req.query.format == 'xml') {
-			res.type('xml').send(data);
+			res.type('application/xml').send(js2xmlparser.parse("toconvert",data));
 		}
 		else {
 			res.type('json').send(data);
@@ -191,8 +191,8 @@ app.get('/neighborhoods', (req, res) => {
 
 app.get('/incidents', (req, res) => {
 	Promise.all([getIncidents(req.query.start_date, req.query.end_date, req.query.code, req.query.grid, req.query.id, req.query.limit)]).then((data) => {
-		if (req.query.format == 'xml') {
-			res.type('xml').send(data);
+		if (req.query.format == 'xml'){
+			res.type('application/xml').send(js2xmlparser.parse("toconvert",data));
 		}
 		else {
 			res.type('json').send(data);
