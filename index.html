@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+    <html>
+        <head>
+            <title>Leaflet Web Map</title>
+			<meta name="viewport" content="width=device-width, initial-scale=1">
+            <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
+			<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+			<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+			<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+			<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+            <script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
+			<script src="https://cdn.jsdelivr.net/npm/vue"></script>
+			
+            <style>
+                #map {
+                    width: 900px;
+                    height:500px;
+                }
+            </style>
+        </head>
+        <body>
+        <!--  -->
+		
+			<nav class="navbar navbar-expand-sm bg-dark navbar-dark">
+				<ul class="navbar-nav">
+					<li class="nav-item active">
+						<a class="nav-link" href="">Home</a>
+					</li>
+					<li class="nav-item">
+						<a class="nav-link" href="about">About Us</a>
+					</li>
+				</ul>
+			</nav>
+			<div class="container">
+			<div class="col-md-12">
+            <div id="map"></div>
+            <br/>
+            Location (lat/long coordinates, address, etc.): <input type="text" name="Location" id="txtLocation" value="">
+            <br>
+            <button onclick="getlocation()">Go to location</button>
+            <button onclick="updateCenterCoordinates()">Center Info</button>
+            <p id="location"></p>
+            Center Coordinates: <p id="centerCoordinates">44.9537, -93.0900</p>
+			
+			<table>
+				<thead>
+					<tr>
+						<th>Case Number</th>
+						<th>Date and Time</th>
+						<th>Incident Type</th>
+						<th>Police Grid</th>
+						<th>Neighborhood</th>
+						<th>Block</th>
+					</tr>
+				</thead>
+				
+				<tbody>
+					!!!TABLE_CRIME_DATA!!!!
+					<!--tr v-for="row in rows">
+						<td v-for="col in columns">{{ row[col] }}</td>
+					</tr-->
+				</tbody>	
+	
+			</table>
+			
+			
+            
+
+            <script type="text/javascript">
+                //Creating the map: centering it and setting the initial zoom level
+                var map = L.map('map',{ center: [44.9537, -93.0900], zoom: 12 });
+                
+                //Setting the maps panning boundries
+                var southWest = L.latLng(44.884284, -93.213769);
+                var northEast = L.latLng(44.993547, -93.004264);
+                var bounds = L.latLngBounds(southWest, northEast);
+                map.setMaxBounds(bounds)
+
+                //adds the actual 'map' to the map variable and sets the min and max zoom
+                L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', 
+                {
+                    attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors',
+                    maxZoom:18,
+                    minZoom: 12
+                }).addTo(map);
+
+                //updates center coordinates if stopped zooming
+                map.on('zoomend', function() {
+                    updateCenterCoordinates();
+                });
+
+                //updates center coordinates if stopped panning
+                map.on('dragend', function() {
+                    updateCenterCoordinates();
+                });
+				
+				var marker = L.marker([44.942964, -93.190555]);
+				marker.addTo(map);
+				//MARKERS NEEDED FOR EACH NEIGHBOORDHOOD
+				/*
+				Conway/Battlecreek/Highwood: 44.921577, -93.030639
+				
+				Greater East Side: 44.977473, -93.025671
+				
+				West Side: 44.933460, -93.080164
+				
+				Dayton's Bluff: 44.958591, -93.058473
+				
+				Payne/Phalen:
+				
+				North End:
+				Thomas/Dale(Frogtown):
+				Summit/University:
+				West Seventh:
+				Como:
+				Hamline/Midway:
+				St. Anthony:
+				Union Park:
+				Macalester-Groveland:
+				Highland:
+				Summit Hill:
+				Capitol River:
+				*/
+
+                //Gets the coordinates of the center of the map, Rounds to the the-thousandths and calls another function to add the text to the location request textbox.
+                function updateCenterCoordinates()
+                {
+                    var currCenter = map.getCenter();
+                    var currLat = Math.round(10000*currCenter.lat)/10000;
+                    var currLng = Math.round(10000*currCenter.lng)/10000;
+                    updateTextCenterLocation(currLat,currLng);
+
+                  //  document.getElementById("centerCoordinates").innerHTML = currLat + "," + currLng;
+                }
+				
+				//updates text box with the location at the center of the map
+                function updateTextCenterLocation( currLatt,  currLngg)
+                {
+                    var TheTextBoxLocationCenter = document.getElementById("txtLocation");
+                    TheTextBoxLocationCenter.value = currLatt + "," + currLngg;
+                }
+
+                function getlocation(){
+                    var input = document.getElementById("txtLocation").value;
+                    document.getElementById("location").innerHTML = input;
+                }
+
+                function zoomTo() {
+                    var lat = document.getElementById("lat").value;
+                    var lng = document.getElementById("lng").value;
+                    map.panTo(new L.LatLng(lat, lng));
+                }
+				
+				var app;
+				function Init() {
+					app = new Vue({
+						el: "#app",
+						data: {
+							
+						}
+					});
+				}
+								
+            </script>
+		</div>
+		</div>
+        </body>
+    </html>
