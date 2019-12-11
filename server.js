@@ -7,6 +7,8 @@ var express = require('express');
 var sqlite3 = require('sqlite3');
 var js2xmlparser = require("js2xmlparser");
 
+
+var template_dir = path.join(__dirname, 'templates');
 var public_dir = path.join(__dirname, 'public');
 var db_filename = path.join(__dirname, 'db', 'stpaul_crime.sqlite3');
 
@@ -24,6 +26,32 @@ var db = new sqlite3.Database(db_filename, sqlite3.OPEN_READWRITE, (err) => {
 });
 
 app.use(bodyParser.urlencoded({encoded: true}));
+
+
+function getCrimeTable(/*location values*/){
+    return new Promise((resolve, reject) => {
+        var c = "";
+        db.all("SELECT case_number, date_time, incident, police_grid, neighborhood_name, block FROM Incidents, Neighborhoods WHERE Incidents.neighborhood_number = Neighborhoods.neighborhood_number AND date_time>='2019-10-01' AND date_time<='2019-10-31' Order By date_time ASC", (err,rows) => {
+            if(err){
+                throw err;
+            }
+            for(var crime in rows) {
+				
+				c += '<tr>';
+				c += '<td>' + rows[crime]["case_number"] + '</td>';
+				c += '<td>' + rows[crime]["date_time"] + '</td>\n' + '<td>' + rows[crime]["incident"] + '</td>\n';
+				c += '<td>' + rows[crime]["police_grid"] + '</td>\n' + '<td>' + rows[crime]["neighborhood_name"] + '</td>\n' + '<td>' + rows[crime]["block"] + '</td></tr>';
+				
+			}
+			
+            resolve(c);
+        });
+    });
+}
+
+
+
+
 
 function newIncident(req, res) {
 	return new Promise((resolve, reject) => {
@@ -158,6 +186,30 @@ function getCodes(selected_codes) {
 	});
 }
 
+app.get('/index', (req, res) => {
+    ReadFile(path.join(template_dir, 'index.html')).then((template) => {
+        let response = template;
+		Promise.all([getCrimeTable()]).then((data) => {
+			
+			response = response.replace(/!!!TABLE_CRIME_DATA!!!!/g, data);
+			WriteHtml(res, response);
+		});
+    }).catch((err) => {
+        Write404Error(res);
+    });
+});
+
+app.get('/about', (req, res) => {
+	ReadFile(path.join(template_dir, 'about.html')).then((template) => {
+        let response = template;
+		
+		WriteHtml(res, response);
+		
+    }).catch((err) => {
+        Write404Error(res);
+    });
+});
+
 app.get('/codes', (req, res) => {
 	
 	Promise.all([getCodes(req.query.code)]).then((data) => {
@@ -211,6 +263,25 @@ app.put('/new-incident', (req, res) => {
     });
 	
 });
+
+function ReadFile(filename) {
+    return new Promise((resolve, reject) => {
+        fs.readFile(filename, (err, data) => {
+            if (err) {
+                reject(err);
+            }
+            else {
+                resolve(data.toString());
+            }
+        });
+    });
+}
+
+function WriteHtml(res, html) {
+    res.writeHead(200, {'Content-Type': 'text/html'});
+    res.write(html);
+    res.end();
+}
 
 
 var server = app.listen(port);
