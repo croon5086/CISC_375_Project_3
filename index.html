@@ -101,7 +101,7 @@
 			<br>
 			<div id="visibleHoods">
 				<ul>
-					<li v-for="area in visableNeighborhoods">{{ area }}</li>
+					<li v-for="area in visibleNeighborhoods">{{ area.neighborhood_name }}</li>
 				</ul>
 			</div>
 			<br>
@@ -139,9 +139,8 @@
 				</thead>
 				
 				<tbody>
-					<!--!!!TABLE_CRIME_DATA!!!!-->
-					<tr v-for="row in rows">
-						<td v-for="col in columns">{{ row[col] }}</td>
+					<tr v-for="crime in visibleNeighborhoods">
+						<td>{{ crime.case_number }}</td>
 					</tr>
 				</tbody>	
 	
@@ -196,9 +195,11 @@
 				var visibility = new Vue({
 					el: '#app',
 					data: {
-						visibleNeighborhoods: []
+						//request to rest server
+						visibleNeighborhoods: {}
 					}
 				});
+				
 				
 				
 				
