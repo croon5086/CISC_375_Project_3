@@ -2,10 +2,12 @@
     <html>
         <head>
             <title>Leaflet Web Map</title>
+			<!--link rel="stylesheet" href="style.css"-->
 			<meta name="viewport" content="width=device-width, initial-scale=1">
             <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
 			<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
 			<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+			<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
 			<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
 			<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
             <script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
@@ -20,6 +22,20 @@
                 }
             </style>
         </head>
+		<style>
+		.number-icon{
+			width: 65px !important;
+			height: 40px !important;
+			margin-left: -12px;
+			margin-top: -12px;
+			border-radius: 18px;
+			border: 5px solid #3F51B5;
+			text-align: center;
+			color: #3F51B5;
+			background-color: #fff;
+			font-size: 20px;
+		}
+		</style>
         <body>
         <!--  -->
 		
@@ -73,8 +89,21 @@
 				
 				Summit Hill: 44.937791, -93.133847
 				
+				var visibility = new Vue({
+					el: '#app',
+					data: {
+						visableNeighborhoods: []
+					}
+				});
+				
 				Capitol River: 44.953341, -93.102230
 				-->
+			<br>
+			<div id="visibleHoods">
+				<ul>
+					<li v-for="area in visableNeighborhoods">{{ area }}</li>
+				</ul>
+			</div>
 			<br>
 			<div id="checkboxes">
 			  <label>Neighborhoods</label>
@@ -138,17 +167,20 @@
                     maxZoom:18,
                     minZoom: 12
                 }).addTo(map);
-
+				
                 //updates center coordinates if stopped zooming
                 map.on('zoomend', function() {
                     updateCenterCoordinates();
 					getlocation();
+					updateVisibleLocations();
                 });
 
                 //updates center coordinates if stopped panning
                 map.on('dragend', function() {
+					
                     updateCenterCoordinates();
 					getlocation();
+					updateVisibleLocations();
                 });
 				
 				document.getElementById("txtLocation").onkeypress = function(event)
@@ -158,30 +190,148 @@
 						getlocation();
 					 }
 				}
-				var marker = L.marker([44.942964, -93.190555]);
-				var conway_marker = L.marker([44.921577, -93.030639]);
-				var eastside_marker = L.marker([44.977473, -93.025671]);
-				var westside_marker = L.marker([44.933460, -93.080164]);
-				var dayton_marker = L.marker([44.958591, -93.058473]);
-				var payne_marker = L.marker([44.976641, -93.066103]);
-				var northend_marker = L.marker([44.977122, -93.105888]);
-				var frogtown_marker = L.marker([44.959952, -93.118672]);
-				var summituniversity_marker = L.marker([44.948338, -93.126295]);
-				var westseventh_marker = L.marker([44.926904, -93.127954]);
-				var como_marker = L.marker([44.979157, -93.146152]);
-				var midway_marker = L.marker([44.951729, -93.167039]);
-				var stanthony_marker = L.marker([44.970715, -93.193814]);
-				var unionpark_marker = L.marker([44.948424, -93.177081]);
-				var macalester_marker = L.marker([44.934318, -93.172108]);
-				var highland_marker = L.marker([44.912484, -93.169759]);
-				var summithill_marker = L.marker([44.937791, -93.133847]);
-				var capitol_marker = L.marker([44.953341, -93.102230]);
 				
+				
+				var visibility = new Vue({
+					el: '#app',
+					data: {
+						visableNeighborhoods: []
+					}
+				});
+				
+				
+				
+				var conway_marker = L.marker([44.921577, -93.030639], {
+					icon: L.divIcon({
+						className: 'number-icon',
+						html: "",
+						name: "Conway/Battlecreek/Highwood"
+					})
+				});
+				
+				var eastside_marker = L.marker([44.977473, -93.025671], {
+					icon: L.divIcon({
+						className: 'number-icon',
+						html: "",
+						name: "Greater East Side"
+					})
+				});
+				var westside_marker = L.marker([44.933460, -93.080164], {
+					icon: L.divIcon({
+						className: 'number-icon',
+						html: "",
+						name: "West Side"
+					})
+				});
+				var dayton_marker = L.marker([44.958591, -93.058473], {
+					icon: L.divIcon({
+						className: 'number-icon',
+						html: "",
+						name: "Dayton's Bluff"
+					})
+				});
+				
+				var payne_marker = L.marker([44.976641, -93.066103], {
+					icon: L.divIcon({
+						className: 'number-icon',
+						html: "",
+						name: "Payne/Phalen"
+					})
+				});
+				var northend_marker = L.marker([44.977122, -93.105888], {
+					icon: L.divIcon({
+						className: 'number-icon',
+						html: "",
+						name: "North End"
+					})
+				});
+				var frogtown_marker = L.marker([44.959952, -93.118672], {
+					icon: L.divIcon({
+						className: 'number-icon',
+						html: "",
+						name: "Thomas/Dale(Frogtown)"
+					})
+				});
+				var summituniversity_marker = L.marker([44.948338, -93.126295], {
+					icon: L.divIcon({
+						className: 'number-icon',
+						html: "",
+						name: "Summit/University"
+					})
+				});
+				var westseventh_marker = L.marker([44.926904, -93.127954], {
+					icon: L.divIcon({
+						className: 'number-icon',
+						html: "",
+						name: "West Seventh"
+					})
+				});
+				var como_marker = L.marker([44.979157, -93.146152], {
+					icon: L.divIcon({
+						className: 'number-icon',
+						html: "",
+						name: "Como"
+					})
+				});
+				var midway_marker = L.marker([44.951729, -93.167039], {
+					icon: L.divIcon({
+						className: 'number-icon',
+						html: "",
+						name: "Hamline/Midway"
+					})
+				});
+				var stanthony_marker = L.marker([44.970715, -93.193814], {
+					icon: L.divIcon({
+						className: 'number-icon',
+						html: "",
+						name: "St. Anthony"
+					})
+				});
+				var unionpark_marker = L.marker([44.948424, -93.177081], {
+					icon: L.divIcon({
+						className: 'number-icon',
+						html: "",
+						name: "Union Park"
+					})
+				});
+				var macalester_marker = L.marker([44.934318, -93.172108], {
+					icon: L.divIcon({
+						className: 'number-icon',
+						html: "",
+						name: "Macalester-Groveland"
+					})
+				});
+				var highland_marker = L.marker([44.912484, -93.169759], {
+					icon: L.divIcon({
+						className: 'number-icon',
+						html: "",
+						name: "Highland"
+					})
+				});
+				var summithill_marker = L.marker([44.937791, -93.133847], {
+					icon: L.divIcon({
+						className: 'number-icon',
+						html: "",
+						name: "Summit Hill"
+					})
+				});
+				var capitol_marker = L.marker([44.953341, -93.102230], {
+					icon: L.divIcon({
+						className: 'number-icon',
+						html: "",
+						name: "Capitol River"
+					})
+				});
+				
+				//capitol_marker.options.icon.options.html = 70;  USE THIS TO CHANGE THE DATA INSIDE OF A MARKER!
+				
+				var crime_counts = !!!CRIME_COUNTS!!!;
 				
 				var markers = [conway_marker, eastside_marker, westside_marker, dayton_marker, payne_marker, northend_marker, frogtown_marker, summituniversity_marker, westseventh_marker, como_marker, midway_marker, stanthony_marker, unionpark_marker, macalester_marker, highland_marker, summithill_marker, capitol_marker];
 				
 				for(let i = 0; i < markers.length; i++){
-					console.log("adding " + markers[i] + " to the map");
+					markers[i].options.icon.options.html = crime_counts[i];
+					markers[i].bindPopup(markers[i].options.icon.options.name);
 					markers[i].addTo(map);
 				}
 				
@@ -229,18 +379,21 @@
                 function updateCenterCoordinates()
                 {
                     var currCenter = map.getCenter();
+					var newBounds = map.getBounds();
+					
                     var currLat = Math.round(10000*currCenter.lat)/10000;
                     var currLng = Math.round(10000*currCenter.lng)/10000;
-                    updateTextCenterLocation(currLat,currLng);
+                    updateTextCenterLocation(currLat,currLng, newBounds);
 
                   //  document.getElementById("centerCoordinates").innerHTML = currLat + "," + currLng;
                 }
 				
 				//updates text box with the location at the center of the map
-                function updateTextCenterLocation( currLatt,  currLngg)
+                function updateTextCenterLocation( currLatt,  currLngg,  newBounds)
                 {
                     var TheTextBoxLocationCenter = document.getElementById("txtLocation");
                     TheTextBoxLocationCenter.value = currLatt + "," + currLngg;
+					
                 }
 
                 function getlocation(){
@@ -271,6 +424,7 @@
 								var bounding = obj[i].boundingbox;
 								if (latitude >= stpaul_boundingbox[0] && latitude <= stpaul_boundingbox[1] && longitude >= stpaul_boundingbox[2] && longitude <= stpaul_boundingbox[3]) {
 									zoomTo(latitude,longitude);
+									updateVisibleLocations(latitude,longitude);
 									document.getElementById("location").innerHTML = place;
 									looking = false;
 									
@@ -296,6 +450,21 @@
                     map.panTo(new L.LatLng(lat, lng));
                 }
 				
+				function updateVisibleLocations() {
+					console.log(visibility.visableNeighborhoods);
+					visibility.visableNeighborhoods = [];
+					var mapBounds = map.getBounds();
+					var numMarkers = 0;
+					for(let i = 0; i < markers.length; i++) {
+						if(mapBounds.contains(markers[i].getLatLng())) {
+							console.log(markers[i].options.icon.options.name);
+							visibility.visableNeighborhoods.push(markers[i].options.icon.options.name);
+							numMarkers++;
+						}
+					}
+					console.log("num markers = " + numMarkers);
+				}
+				/*
 				var app;
 				function Init() {
 					app = new Vue({
@@ -305,7 +474,7 @@
 						}
 					});
 				}
-								
+				*/			
             </script>
 
 		</div>

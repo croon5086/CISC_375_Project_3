@@ -49,7 +49,24 @@ function getCrimeTable(/*location values*/){
     });
 }
 
-
+function getCrimeTotals(/*location values*/){
+	return new Promise((resolve, reject) => {
+		var c = "";
+		db.all("SELECT COUNT(case_number) AS num, neighborhood_name, Incidents.neighborhood_number FROM Incidents, Neighborhoods WHERE Incidents.neighborhood_number = Neighborhoods.neighborhood_number GROUP BY neighborhood_name ORDER BY Neighborhoods.neighborhood_number", (err, rows) => {
+			if(err) {
+				throw err;
+			}
+			c += '[';
+			for(var count in rows) {
+				c += rows[count]["num"] + ", ";
+			}
+			c = c.substring(0, c.length - 2);
+			c += ']';
+			
+			resolve(c);
+		});
+	});
+}
 
 
 
@@ -186,12 +203,12 @@ function getCodes(selected_codes) {
 	});
 }
 
-app.get('/index', (req, res) => {
+app.get('/', (req, res) => {
     ReadFile(path.join(template_dir, 'index.html')).then((template) => {
         let response = template;
-		Promise.all([getCrimeTable()]).then((data) => {
-			
-			response = response.replace(/!!!TABLE_CRIME_DATA!!!!/g, data);
+		Promise.all([getCrimeTable(), getCrimeTotals()]).then((data) => {
+			response = response.replace(/!!!TABLE_CRIME_DATA!!!!/g, data[0]);
+			response = response.replace(/!!!CRIME_COUNTS!!!/g, data[1]);
 			WriteHtml(res, response);
 		});
     }).catch((err) => {
