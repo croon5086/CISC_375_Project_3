@@ -38,7 +38,6 @@
 		</style>
         <body>
         <!--  -->
-		
 			<nav class="navbar navbar-expand-sm bg-dark navbar-dark">
 				<ul class="navbar-nav">
 					<li class="nav-item active">
@@ -51,53 +50,17 @@
 			</nav>
 			<div class="container">
 			<div class="col-md-12">
+				<br>
+			<p>Crime ST. Paul</p>
             <div id="map"></div>
             <br/>
-            Location (lat/long coordinates, address, etc.): <input type="text" name="Location" id="txtLocation" value="">
+            Search for Location: <input type="text" name="Location" id="txtLocation" value="44.9537, -93.0900">
             <br>
+            Output:
+            <input type="radio" id="addr" name="locationType" value="address_of_loc" onclick="getlocation()" > &nbsp Address &nbsp
+			<input type="radio" id="latln" name="locationType" value="lat_lon_of_loc" onclick="getlocation()" checked> Latitude/Longitude
+			<br>
             <p id="location"></p>
-			<!--
-				Conway/Battlecreek/Highwood: 44.921577, -93.030639
-				
-				Greater East Side: 44.977473, -93.025671
-				
-				West Side: 44.933460, -93.080164
-				
-				Dayton's Bluff: 44.958591, -93.058473
-				
-				Payne/Phalen: 44.976641, -93.066103
-				
-				North End: 44.977122, -93.105888
-				
-				Thomas/Dale(Frogtown): 44.959952, -93.118672
-				
-				Summit/University: 44.948338, -93.126295
-				
-				West Seventh: 44.926904, -93.127954
-				
-				Como: 44.979157, -93.146152
-				
-				Hamline/Midway: 44.951729, -93.167039
-				
-				St. Anthony: 44.970715, -93.193814
-				
-				Union Park: 44.948424, -93.177081
-				
-				Macalester-Groveland: 44.934318, -93.172108
-				
-				Highland: 44.912484, -93.169759
-				
-				Summit Hill: 44.937791, -93.133847
-				
-				var visibility = new Vue({
-					el: '#app',
-					data: {
-						visableNeighborhoods: []
-					}
-				});
-				
-				Capitol River: 44.953341, -93.102230
-				-->
 			<br>
 			<div id="visibleHoods">
 				<ul>
@@ -112,6 +75,19 @@
 				<li><input type="checkbox">Greater East Side</li>
 				<li><input type="checkbox">West Side</li>
 				<li><input type="checkbox">Dayton's Bluff</li>
+				<li><input type="checkbox">Payne/Phalen</li>
+				<li><input type="checkbox">North End</li>
+				<li><input type="checkbox">Thomas/Dale(Frogtown)</li>
+				<li><input type="checkbox">Summit/University</li>
+				<li><input type="checkbox">West Seventh</li>
+				<li><input type="checkbox">Como</li>
+				<li><input type="checkbox">Hamline/Midway</li>
+				<li><input type="checkbox">St. Anthony</li>
+				<li><input type="checkbox">Union Park</li>
+				<li><input type="checkbox">Macalester-Groveland</li>
+				<li><input type="checkbox">Highland</li>
+				<li><input type="checkbox">Summit Hill</li>
+				<li><input type="checkbox">Capitol River</li>
 			  </ul>
 			</div>
 			<br>
@@ -336,46 +312,6 @@
 					markers[i].bindPopup(markers[i].options.icon.options.name);
 					markers[i].addTo(map);
 				}
-				
-				
-				//MARKERS NEEDED FOR EACH NEIGHBOORDHOOD
-				/*
-				Conway/Battlecreek/Highwood: 44.921577, -93.030639
-				
-				Greater East Side: 44.977473, -93.025671
-				
-				West Side: 44.933460, -93.080164
-				
-				Dayton's Bluff: 44.958591, -93.058473
-				
-				Payne/Phalen: 44.976641, -93.066103
-				
-				North End: 44.977122, -93.105888
-				
-				Thomas/Dale(Frogtown): 44.959952, -93.118672
-				
-				Summit/University: 44.948338, -93.126295
-				
-				West Seventh: 44.926904, -93.127954
-				
-				Como: 44.979157, -93.146152
-				
-				Hamline/Midway: 44.951729, -93.167039
-				
-				St. Anthony: 44.970715, -93.193814
-				
-				Union Park: 44.948424, -93.177081
-				
-				Macalester-Groveland: 44.934318, -93.172108
-				
-				Highland: 44.912484, -93.169759
-				
-				Summit Hill: 44.937791, -93.133847
-				
-				Capitol River: 44.953341, -93.102230
-				*/
-				
-				
 
                 //Gets the coordinates of the center of the map, Rounds to the the-thousandths and calls another function to add the text to the location request textbox.
                 function updateCenterCoordinates()
@@ -393,25 +329,27 @@
 				//updates text box with the location at the center of the map
                 function updateTextCenterLocation( currLatt,  currLngg,  newBounds)
                 {
-                    var TheTextBoxLocationCenter = document.getElementById("txtLocation");
-                    TheTextBoxLocationCenter.value = currLatt + "," + currLngg;
+                	var out = document.getElementsByName('locationType').getElementsById('addr').checked;
+					var TheTextBoxLocationCenter = document.getElementById("txtLocation");
+								 if (out)
+								 {
+								 	
+                    				TheTextBoxLocationCenter.value = currLatt + "," + currLngg;
+								 }
+								 else
+								 	
+                    
 					
                 }
 
                 function getlocation(){
-				
-                    //var name = document.getElementById("txtLocation").value;
-                    //document.getElementById("location").innerHTML = input;
-					
 					var name = document.getElementById("txtLocation").value; 
                     $.getJSON('https://nominatim.openstreetmap.org/search.php?q=' + name + "&format=json",
                     function(obj)
                     {
-					
-						if(obj[0]!=undefined)
+					    if(obj[0]!=undefined)
 						{
-                        //var topResponse = JSON.parse(obj[0]);
-							var looking = true;
+                        	var looking = true;
 							let i = 0;
 							while(looking && i < obj.length)
 							{
@@ -429,10 +367,8 @@
 									updateVisibleLocations(latitude,longitude);
 									document.getElementById("location").innerHTML = place;
 									looking = false;
-									
 								}
 								i++;
-								//Radio button Option
 							}
 							if(looking) {
 								document.getElementById("location").innerHTML = "Location not found on map";
@@ -466,10 +402,7 @@
 					}
 					
 					
-				}
-				
-
-				
+				}				
             </script>
 
 		</div>
