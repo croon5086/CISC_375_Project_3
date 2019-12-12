@@ -139,10 +139,10 @@
 				</thead>
 				
 				<tbody>
-					!!!TABLE_CRIME_DATA!!!!
-					<!--tr v-for="row in rows">
+					<!--!!!TABLE_CRIME_DATA!!!!-->
+					<tr v-for="row in rows">
 						<td v-for="col in columns">{{ row[col] }}</td>
-					</tr-->
+					</tr>
 				</tbody>	
 	
 			</table>
@@ -191,11 +191,12 @@
 					 }
 				}
 				
+				var incidents = !!!CRIME_DATA!!!;
 				
 				var visibility = new Vue({
 					el: '#app',
 					data: {
-						visableNeighborhoods: []
+						visibleNeighborhoods: []
 					}
 				});
 				
@@ -451,30 +452,23 @@
                 }
 				
 				function updateVisibleLocations() {
-					console.log(visibility.visableNeighborhoods);
-					visibility.visableNeighborhoods = [];
+					console.log(visibility.visibleNeighborhoods);
+					visibility.visibleNeighborhoods = [];
 					var mapBounds = map.getBounds();
 					var numMarkers = 0;
 					for(let i = 0; i < markers.length; i++) {
 						if(mapBounds.contains(markers[i].getLatLng())) {
 							console.log(markers[i].options.icon.options.name);
-							visibility.visableNeighborhoods.push(markers[i].options.icon.options.name);
+							visibility.visibleNeighborhoods.push(markers[i].options.icon.options.name);
 							numMarkers++;
 						}
 					}
-					console.log("num markers = " + numMarkers);
+					
+					
 				}
-				/*
-				var app;
-				function Init() {
-					app = new Vue({
-						el: "#app",
-						data: {
-							
-						}
-					});
-				}
-				*/			
+				
+
+				
             </script>
 
 		</div>

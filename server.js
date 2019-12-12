@@ -28,10 +28,17 @@ var db = new sqlite3.Database(db_filename, sqlite3.OPEN_READWRITE, (err) => {
 app.use(bodyParser.urlencoded({encoded: true}));
 
 
-function getCrimeTable(/*location values*/){
+function getCrimeTable(visibleNeighborhoods){
     return new Promise((resolve, reject) => {
         var c = "";
-        db.all("SELECT case_number, date_time, incident, police_grid, neighborhood_name, block FROM Incidents, Neighborhoods WHERE Incidents.neighborhood_number = Neighborhoods.neighborhood_number AND date_time>='2019-10-01' AND date_time<='2019-10-31' Order By date_time ASC", (err,rows) => {
+		var d = "";
+		var sql = "";
+		
+		
+		sql = "SELECT case_number, date_time, incident, police_grid, neighborhood_name, block FROM Incidents, Neighborhoods WHERE Incidents.neighborhood_number = Neighborhoods.neighborhood_number AND date_time>='2019-10-01' AND date_time <='2019-10-31' Order By date_time ASC";
+		
+		
+        db.all(sql, (err,rows) => {
             if(err){
                 throw err;
             }
@@ -44,15 +51,19 @@ function getCrimeTable(/*location values*/){
 				
 			}
 			
-            resolve(c);
+            resolve(JSON.stringify(rows));
         });
     });
 }
 
-function getCrimeTotals(/*location values*/){
+function getCrimeTotals(visibleNeighborhoods){
 	return new Promise((resolve, reject) => {
 		var c = "";
-		db.all("SELECT COUNT(case_number) AS num, neighborhood_name, Incidents.neighborhood_number FROM Incidents, Neighborhoods WHERE Incidents.neighborhood_number = Neighborhoods.neighborhood_number GROUP BY neighborhood_name ORDER BY Neighborhoods.neighborhood_number", (err, rows) => {
+		var sql;
+		
+		sql = "SELECT COUNT(case_number) AS num, neighborhood_name, Incidents.neighborhood_number FROM Incidents, Neighborhoods WHERE Incidents.neighborhood_number = Neighborhoods.neighborhood_number AND date_time >= '2019-10-01' AND date_time <= '2019-10-31' GROUP BY neighborhood_name ORDER BY Neighborhoods.neighborhood_number";
+		
+		db.all(sql, (err, rows) => {
 			if(err) {
 				throw err;
 			}
@@ -206,8 +217,10 @@ function getCodes(selected_codes) {
 app.get('/', (req, res) => {
     ReadFile(path.join(template_dir, 'index.html')).then((template) => {
         let response = template;
+		var hoods = [];
 		Promise.all([getCrimeTable(), getCrimeTotals()]).then((data) => {
-			response = response.replace(/!!!TABLE_CRIME_DATA!!!!/g, data[0]);
+			
+			response = response.replace(/!!!CRIME_DATA!!!/g, data[0].toString());
 			response = response.replace(/!!!CRIME_COUNTS!!!/g, data[1]);
 			WriteHtml(res, response);
 		});
@@ -245,15 +258,21 @@ app.get('/codes', (req, res) => {
 });
 
 app.get('/neighborhoods', (req, res) =>  {
-	Promise.all([getNeighborhoods(req.query.id)]).then((data) => {
-		if (req.query.format == 'xml') {
-			res.type('application/xml').send(js2xmlparser.parse("toconvert",data));
-		}
-		else {
-			res.type('json').send(data);
-		}
+	ReadFile(path.join(template_dir, 'index.html')).then((template) => {
+        let response = template;
+		Promise.all([getCrimeTable(), getCrimeTotals(), getNeighborhoods(req.query.id)]).then((data) => {
+			if (req.query.format == 'xml') {
+				res.type('application/xml').send(js2xmlparser.parse("toconvert",data));
+			}
+			else {
+				res.type('json').send(data);
+			}
+			response = response.replace(/!!!TABLE_CRIME_DATA!!!!/g, data[0]);
+			response = response.replace(/!!!CRIME_COUNTS!!!/g, data[1]);
+			WriteHtml(res, response);
+		});
     }).catch((err) => {
-        console.log("error");
+        Write404Error(res);
     });
 	
 });
