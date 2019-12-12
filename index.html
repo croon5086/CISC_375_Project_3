@@ -38,6 +38,7 @@
 		</style>
         <body>
         <!--  -->
+		
 			<nav class="navbar navbar-expand-sm bg-dark navbar-dark">
 				<ul class="navbar-nav">
 					<li class="nav-item active">
@@ -50,17 +51,12 @@
 			</nav>
 			<div class="container">
 			<div class="col-md-12">
-				<br>
-			<p>Crime ST. Paul</p>
             <div id="map"></div>
             <br/>
-            Search for Location: <input type="text" name="Location" id="txtLocation" value="44.9537, -93.0900">
+            Location (lat/long coordinates, address, etc.): <input type="text" name="Location" id="txtLocation" value="">
             <br>
-            Output:
-            <input type="radio" id="addr" name="locationType" value="address_of_loc" onclick="getlocation()" > &nbsp Address &nbsp
-			<input type="radio" id="latln" name="locationType" value="lat_lon_of_loc" onclick="getlocation()" checked> Latitude/Longitude
-			<br>
             <p id="location"></p>
+			
 			<br>
 			<div id="visibleHoods">
 				<ul>
@@ -75,19 +71,6 @@
 				<li><input type="checkbox">Greater East Side</li>
 				<li><input type="checkbox">West Side</li>
 				<li><input type="checkbox">Dayton's Bluff</li>
-				<li><input type="checkbox">Payne/Phalen</li>
-				<li><input type="checkbox">North End</li>
-				<li><input type="checkbox">Thomas/Dale(Frogtown)</li>
-				<li><input type="checkbox">Summit/University</li>
-				<li><input type="checkbox">West Seventh</li>
-				<li><input type="checkbox">Como</li>
-				<li><input type="checkbox">Hamline/Midway</li>
-				<li><input type="checkbox">St. Anthony</li>
-				<li><input type="checkbox">Union Park</li>
-				<li><input type="checkbox">Macalester-Groveland</li>
-				<li><input type="checkbox">Highland</li>
-				<li><input type="checkbox">Summit Hill</li>
-				<li><input type="checkbox">Capitol River</li>
 			  </ul>
 			</div>
 			<br>
@@ -134,6 +117,19 @@
                 var northEast = L.latLng(44.993547, -93.004264);
                 var bounds = L.latLngBounds(southWest, northEast);
                 map.setMaxBounds(bounds)
+				var crimes = getCrimeData();
+				
+				var visibility = new Vue({
+					el: '#app',
+					data: {
+						visibleNeighborhoods: {}
+					}
+				});
+				
+				visibility.visibleNeighborhoods.value = crimes;
+				console.log("here!");
+				console.log(visibility);
+				
 
                 //adds the actual 'map' to the map variable and sets the min and max zoom
                 L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', 
@@ -166,15 +162,6 @@
 					 }
 				}
 				
-				var incidents = !!!CRIME_DATA!!!;
-				
-				var visibility = new Vue({
-					el: '#app',
-					data: {
-						//request to rest server
-						visibleNeighborhoods: {}
-					}
-				});
 				
 				
 				
@@ -312,6 +299,8 @@
 					markers[i].bindPopup(markers[i].options.icon.options.name);
 					markers[i].addTo(map);
 				}
+				
+				
 
                 //Gets the coordinates of the center of the map, Rounds to the the-thousandths and calls another function to add the text to the location request textbox.
                 function updateCenterCoordinates()
@@ -329,27 +318,35 @@
 				//updates text box with the location at the center of the map
                 function updateTextCenterLocation( currLatt,  currLngg,  newBounds)
                 {
-                	var out = document.getElementsByName('locationType').getElementsById('addr').checked;
-					var TheTextBoxLocationCenter = document.getElementById("txtLocation");
-								 if (out)
-								 {
-								 	
-                    				TheTextBoxLocationCenter.value = currLatt + "," + currLngg;
-								 }
-								 else
-								 	
-                    
+                    var TheTextBoxLocationCenter = document.getElementById("txtLocation");
+                    TheTextBoxLocationCenter.value = currLatt + "," + currLngg;
 					
                 }
+				
+				function getCrimeData() {
+					var start = "2019-10-01";
+					var end = "2019-10-31";
+					$.getJSON('http://localhost:8000/incidents?start_date=' + start + '&end_date=' + end,
+					function(obj)
+					{
+						return obj;
+					});
+				}
 
                 function getlocation(){
+				
+                    //var name = document.getElementById("txtLocation").value;
+                    //document.getElementById("location").innerHTML = input;
+					
 					var name = document.getElementById("txtLocation").value; 
                     $.getJSON('https://nominatim.openstreetmap.org/search.php?q=' + name + "&format=json",
                     function(obj)
                     {
-					    if(obj[0]!=undefined)
+					
+						if(obj[0]!=undefined)
 						{
-                        	var looking = true;
+                        //var topResponse = JSON.parse(obj[0]);
+							var looking = true;
 							let i = 0;
 							while(looking && i < obj.length)
 							{
@@ -367,8 +364,10 @@
 									updateVisibleLocations(latitude,longitude);
 									document.getElementById("location").innerHTML = place;
 									looking = false;
+									
 								}
 								i++;
+								//Radio button Option
 							}
 							if(looking) {
 								document.getElementById("location").innerHTML = "Location not found on map";
@@ -402,7 +401,10 @@
 					}
 					
 					
-				}				
+				}
+				
+
+				
             </script>
 
 		</div>
