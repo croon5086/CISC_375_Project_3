@@ -7,7 +7,7 @@ var express = require('express');
 var sqlite3 = require('sqlite3');
 var js2xmlparser = require("js2xmlparser");
 
-var template_dir = path.join(__dirname, 'templates');
+var template_dir = path.join(__dirname, '');
 var public_dir = path.join(__dirname, 'public');
 var db_filename = path.join(__dirname, 'db', 'stpaul_crime.sqlite3');
 
@@ -161,12 +161,14 @@ function getCodes(selected_codes) {
 	});
 }
 
+
 app.get('/', (req, res) => {
     ReadFile(path.join(template_dir, 'index.html')).then((template) => {
         let response = template;
 		WriteHtml(res, response);
     });
 });
+
 
 app.get('/codes', (req, res) => {
 	
