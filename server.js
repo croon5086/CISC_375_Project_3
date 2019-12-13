@@ -258,24 +258,19 @@ app.get('/codes', (req, res) => {
 });
 
 app.get('/neighborhoods', (req, res) =>  {
-	ReadFile(path.join(template_dir, 'index.html')).then((template) => {
-        let response = template;
-		Promise.all([getCrimeTable(), getCrimeTotals(), getNeighborhoods(req.query.id)]).then((data) => {
-			if (req.query.format == 'xml') {
-				res.type('application/xml').send(js2xmlparser.parse("toconvert",data));
-			}
-			else {
-				res.type('json').send(data);
-			}
-			response = response.replace(/!!!TABLE_CRIME_DATA!!!!/g, data[0]);
-			response = response.replace(/!!!CRIME_COUNTS!!!/g, data[1]);
-			WriteHtml(res, response);
-		});
+Promise.all([getNeighborhoods(req.query.id)]).then((data) => {
+if (req.query.format == 'xml') {
+res.type('application/xml').send(js2xmlparser.parse("toconvert",data));
+}
+else {
+res.type('json').send(data);
+}
     }).catch((err) => {
-        Write404Error(res);
+        console.log("error");
     });
-	
+
 });
+
 
 app.get('/incidents', (req, res) => {
 	Promise.all([getIncidents(req.query.start_date, req.query.end_date, req.query.code, req.query.grid, req.query.id, req.query.limit)]).then((data) => {

@@ -11,9 +11,10 @@
 			<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
 			<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
             <script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
-			<script src="https://cdn.jsdelivr.net/npm/vue"></script>
+			<script type="application/javascript" src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
 			<script src="http://open.mapquestapi.com/nominatim/v1/search.php"></script>
 			<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+			<script type="application/javascript" src="https://cdn.jsdelivr.net/npm/vue"></script>
 			
             <style>
                 #map {
@@ -36,8 +37,8 @@
 			font-size: 20px;
 		}
 		</style>
-        <body>
-        <!--  -->
+        <body onload="Init()">
+       
 		
 			<nav class="navbar navbar-expand-sm bg-dark navbar-dark">
 				<ul class="navbar-nav">
@@ -51,19 +52,49 @@
 			</nav>
 			<div class="container">
 			<div class="col-md-12">
-            <div id="map"></div>
+			<div id="map"></div>
             <br/>
             Search: <input type="text" name="Location" id="txtLocation" value="" style="width:750px;">
             <br>
             <input type="radio" name="locType" value="address" checked> Address &nbsp
 			<input type="radio" name="locType" value="latlong"> Latitude/Longitude<br>
             <p id="location"></p>
+			<br>
+			<p id="testLocation"></p>
 			
 			<br>
-			<div id="visibleHoods">
+			<div id="app">
 				<ul>
-					<li v-for="area in visibleNeighborhoods">{{ area.neighborhood_name }}</li>
+					<option v-for="hood in visibleNeighborhoods">{{ hood }}</option>
 				</ul>
+				<br>
+			<table>
+				<thead>
+					<tr>
+						<th>Case Number</th>
+						<th>Date and Time</th>
+						<th>Incident Type</th>
+						<th>Police Grid</th>
+						<th>Neighborhood</th>
+						<th>Block</th>
+					</tr>
+				</thead>
+				<!--visibleNeighborhoods["N" + crime.neighborhood_number]-->
+				<tbody>
+					<tr v-for="(crime,key) in visibleCrimes" v-if="crime.neighborhood_number == 3">
+						<td>{{ key.substring(1) }}</td>
+						<td>{{ crime.date + " " +crime.time }}</td>
+						<td>{{ crime.incident }}</td>
+						<td>{{ crime.police_grid }}</td>
+						<td>{{ crime.neighborhood_number }}</td>
+						<td>{{ crime.block }}</td>
+					</tr>
+				</tbody>	
+	
+			</table>
+				
+			<!-- here and up -->
+				
 			</div>
 			<br>
 			<div id="checkboxes">
@@ -86,30 +117,6 @@
 			  </ul>
 			</div>
 			<br>
-			
-			<table>
-				<thead>
-					<tr>
-						<th>Case Number</th>
-						<th>Date and Time</th>
-						<th>Incident Type</th>
-						<th>Police Grid</th>
-						<th>Neighborhood</th>
-						<th>Block</th>
-					</tr>
-				</thead>
-				
-				<tbody>
-					<tr v-for="crime in visibleNeighborhoods">
-						<td>{{ crime.case_number }}</td>
-					</tr>
-				</tbody>	
-	
-			</table>
-			
-			
-            
-
             <script type="text/javascript">
                 //Creating the map: centering it and setting the initial zoom level
                 var map = L.map('map',{ center: [44.9537, -93.0900], zoom: 12 });
@@ -205,26 +212,71 @@
                 }
 
                 //Takes map to the lat and longitude of the location desired.
-                function zoomTo(lat,lng) {
-                    map.panTo(new L.LatLng(lat, lng));
-                }
+                function zoomTo(lat,lng) {map.panTo(new L.LatLng(lat, lng));}
 
-
-
-				var crimes = getCrimeData();
+				var crimes;
+				var neighborhoods;
+				var visibility;
 				
-				var visibility = new Vue({
-					el: '#app',
-					data: {
-						visibleNeighborhoods: {}
+				function Init() {
+					visibility = new Vue({
+						el: '#app',
+						data: {
+							visibleNeighborhoods: {},
+							visibleCrimes: {}
+						}
+					});
+					getNeighborhoodData();
+					getCrimeData();
+					
+				}
+
+				function getNeighborhoodData() {
+					$.getJSON('http://localhost:8000/neighborhoods',
+					function(obj)
+					{	
+						visibility.visibleNeighborhoods = obj[0];
+						neighborhoods = obj[0];
+					});
+				}
+				
+				function getCrimeData() {
+					var start = "2019-10-01";
+					var end = "2019-10-02";
+					$.getJSON('http://localhost:8000/incidents?start_date=' + start + '&end_date=' + end,
+					function(obj)
+					{
+						visibility.visibleCrimes = obj[0]; 
+						for(let i = 0; i < visibility.visibleCrimes; i++) {
+							visibility.visibleCrimes[i].neighborhood_number = "N" + visibility.visibleCrimes[i].neighborhood_number;
+						}
+						crimes = obj[0];
+					});
+					
+				}
+
+				function updateVisibleLocations() {
+					
+					visibility.visibleNeighborhoods = [];
+					var mapBounds = map.getBounds();
+					var numMarkers = 0;
+					var currentLocations = [];
+					
+					for(let i = 0; i < markers.length; i++) {
+						if(mapBounds.contains(markers[i].getLatLng())) {
+							
+							currentLocations.push(markers[i].options.icon.options.name);
+							numMarkers++;
+						}
 					}
-				});
-				
-				visibility.visibleNeighborhoods.value = crimes;
-				console.log("here!");
-				console.log(visibility);
-			
-				
+					visibility.visibleNeighborhoods = currentLocations;
+					
+				}
+
+				var crime_counts = !!!CRIME_COUNTS!!!;
+
+				//Below here is stuff for markers
+
 				var conway_marker = L.marker([44.921577, -93.030639], {
 					icon: L.divIcon({
 						className: 'number-icon',
@@ -345,12 +397,7 @@
 						html: "",
 						name: "Capitol River"
 					})
-				});
-				
-				//capitol_marker.options.icon.options.html = 70;  USE THIS TO CHANGE THE DATA INSIDE OF A MARKER!
-				
-				var crime_counts = !!!CRIME_COUNTS!!!;
-				
+				});	
 				var markers = [conway_marker, eastside_marker, westside_marker, dayton_marker, payne_marker, northend_marker, frogtown_marker, summituniversity_marker, westseventh_marker, como_marker, midway_marker, stanthony_marker, unionpark_marker, macalester_marker, highland_marker, summithill_marker, capitol_marker];
 				
 				for(let i = 0; i < markers.length; i++){
@@ -358,43 +405,7 @@
 					markers[i].bindPopup(markers[i].options.icon.options.name);
 					markers[i].addTo(map);
 				}
-				
-				
-
-                
-				
-				function getCrimeData() {
-					var start = "2019-10-01";
-					var end = "2019-10-31";
-					$.getJSON('http://localhost:8000/incidents?start_date=' + start + '&end_date=' + end,
-					function(obj)
-					{
-						return obj;
-					});
-				}
-
-                
-				
-				function updateVisibleLocations() {
-					console.log(visibility.visibleNeighborhoods);
-					visibility.visibleNeighborhoods = [];
-					var mapBounds = map.getBounds();
-					var numMarkers = 0;
-					for(let i = 0; i < markers.length; i++) {
-						if(mapBounds.contains(markers[i].getLatLng())) {
-							console.log(markers[i].options.icon.options.name);
-							visibility.visibleNeighborhoods.push(markers[i].options.icon.options.name);
-							numMarkers++;
-						}
-					}
-					
-					
-				}
-				
-
-				
             </script>
-
 		</div>
 		</div>
         </body>
