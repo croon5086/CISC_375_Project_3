@@ -7,13 +7,14 @@ var express = require('express');
 var sqlite3 = require('sqlite3');
 var js2xmlparser = require("js2xmlparser");
 
-
-var template_dir = path.join(__dirname, 'docs');
+var template_dir = path.join(__dirname, 'templates');
 var public_dir = path.join(__dirname, 'public');
 var db_filename = path.join(__dirname, 'db', 'stpaul_crime.sqlite3');
 
 var app = express();
-var port = 8000;
+//var port = 8000;
+var port = process.argv[2];
+console.log("port = " + process.argv[2]);
 
 // open the database
 var db = new sqlite3.Database(db_filename, sqlite3.OPEN_READWRITE, (err) => {
@@ -26,60 +27,6 @@ var db = new sqlite3.Database(db_filename, sqlite3.OPEN_READWRITE, (err) => {
 });
 
 app.use(bodyParser.urlencoded({encoded: true}));
-
-
-function getCrimeTable(visibleNeighborhoods){
-    return new Promise((resolve, reject) => {
-        var c = "";
-		var d = "";
-		var sql = "";
-		
-		
-		sql = "SELECT case_number, date_time, incident, police_grid, neighborhood_name, block FROM Incidents, Neighborhoods WHERE Incidents.neighborhood_number = Neighborhoods.neighborhood_number AND date_time>='2019-10-01' AND date_time <='2019-10-31' Order By date_time ASC";
-		
-		
-        db.all(sql, (err,rows) => {
-            if(err){
-                throw err;
-            }
-            for(var crime in rows) {
-				
-				c += '<tr>';
-				c += '<td>' + rows[crime]["case_number"] + '</td>';
-				c += '<td>' + rows[crime]["date_time"] + '</td>\n' + '<td>' + rows[crime]["incident"] + '</td>\n';
-				c += '<td>' + rows[crime]["police_grid"] + '</td>\n' + '<td>' + rows[crime]["neighborhood_name"] + '</td>\n' + '<td>' + rows[crime]["block"] + '</td></tr>';
-				
-			}
-			
-            resolve(JSON.stringify(rows));
-        });
-    });
-}
-
-function getCrimeTotals(visibleNeighborhoods){
-	return new Promise((resolve, reject) => {
-		var c = "";
-		var sql;
-		
-		sql = "SELECT COUNT(case_number) AS num, neighborhood_name, Incidents.neighborhood_number FROM Incidents, Neighborhoods WHERE Incidents.neighborhood_number = Neighborhoods.neighborhood_number AND date_time >= '2019-10-01' AND date_time <= '2019-10-31' GROUP BY neighborhood_name ORDER BY Neighborhoods.neighborhood_number";
-		
-		db.all(sql, (err, rows) => {
-			if(err) {
-				throw err;
-			}
-			c += '[';
-			for(var count in rows) {
-				c += rows[count]["num"] + ", ";
-			}
-			c = c.substring(0, c.length - 2);
-			c += ']';
-			
-			resolve(c);
-		});
-	});
-}
-
-
 
 function newIncident(req, res) {
 	return new Promise((resolve, reject) => {
@@ -217,26 +164,7 @@ function getCodes(selected_codes) {
 app.get('/', (req, res) => {
     ReadFile(path.join(template_dir, 'index.html')).then((template) => {
         let response = template;
-		var hoods = [];
-		Promise.all([getCrimeTable(), getCrimeTotals()]).then((data) => {
-			
-			response = response.replace(/!!!CRIME_DATA!!!/g, data[0].toString());
-			response = response.replace(/!!!CRIME_COUNTS!!!/g, data[1]);
-			WriteHtml(res, response);
-		});
-    }).catch((err) => {
-        Write404Error(res);
-    });
-});
-
-app.get('/about', (req, res) => {
-	ReadFile(path.join(template_dir, 'about.html')).then((template) => {
-        let response = template;
-		
 		WriteHtml(res, response);
-		
-    }).catch((err) => {
-        Write404Error(res);
     });
 });
 
@@ -258,19 +186,18 @@ app.get('/codes', (req, res) => {
 });
 
 app.get('/neighborhoods', (req, res) =>  {
-Promise.all([getNeighborhoods(req.query.id)]).then((data) => {
-if (req.query.format == 'xml') {
-res.type('application/xml').send(js2xmlparser.parse("toconvert",data));
-}
-else {
-res.type('json').send(data);
-}
+	Promise.all([getNeighborhoods(req.query.id)]).then((data) => {
+		if (req.query.format == 'xml') {
+			res.type('application/xml').send(js2xmlparser.parse("toconvert",data));
+		}
+		else {
+			res.type('json').send(data);
+		}
     }).catch((err) => {
         console.log("error");
     });
-
+	
 });
-
 
 app.get('/incidents', (req, res) => {
 	Promise.all([getIncidents(req.query.start_date, req.query.end_date, req.query.code, req.query.grid, req.query.id, req.query.limit)]).then((data) => {
