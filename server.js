@@ -8,7 +8,7 @@ var sqlite3 = require('sqlite3');
 var js2xmlparser = require("js2xmlparser");
 
 
-var template_dir = path.join(__dirname, 'templates');
+var template_dir = path.join(__dirname, 'docs');
 var public_dir = path.join(__dirname, 'public');
 var db_filename = path.join(__dirname, 'db', 'stpaul_crime.sqlite3');
 
