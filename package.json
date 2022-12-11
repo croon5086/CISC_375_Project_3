@@ -22,7 +22,7 @@
         "url": "https://github.com/croon5086/CISC_375_Project_3"
     },
     "dependencies": {
-        "express": "^4.17.1",
+        "express": "^4.17.3",
         "js2xmlparser": "^4.0.0",
         "sqlite3": "^4.1.0"
     }
